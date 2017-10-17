@@ -17,18 +17,17 @@ import (
 	"golang.org/x/oauth2/jws"
 )
 
-func readRsaPrivateKey(bytes []byte) (*rsa.PrivateKey, error) {
+func readRsaPrivateKey(bytes []byte) (key *rsa.PrivateKey, err error) {
 	block, _ := pem.Decode(bytes)
 	if block == nil {
-		return nil, errors.New("invalid private key data")
+		err = errors.New("invalid private key data")
+		return
 	}
 
-	var key *rsa.PrivateKey
-	var err error
 	if block.Type == "RSA PRIVATE KEY" {
 		key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
-			return nil, err
+			return
 		}
 	} else if block.Type == "PRIVATE KEY" {
 		keyInterface, err := x509.ParsePKCS8PrivateKey(block.Bytes)
@@ -41,7 +40,7 @@ func readRsaPrivateKey(bytes []byte) (*rsa.PrivateKey, error) {
 			return nil, errors.New("not RSA private key")
 		}
 	} else {
-		return nil, fmt.Errorf("invalid private key type : %s", block.Type)
+		return nil, fmt.Errorf("invalid private key type: %s", block.Type)
 	}
 
 	key.Precompute()
@@ -50,7 +49,7 @@ func readRsaPrivateKey(bytes []byte) (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 
-	return key, nil
+	return
 }
 
 func getToken(saPath, clientID string) (token string, err error) {
