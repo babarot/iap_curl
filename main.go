@@ -33,12 +33,12 @@ func run(args []string) int {
 	}
 
 	if creds == "" {
-		fmt.Fprintf(os.Stderr, "Error: %s is missing", GoogleApplicationCredentials)
+		fmt.Fprintf(os.Stderr, "Error: %s is missing\n", GoogleApplicationCredentials)
 		return 1
 	}
 
 	if clientID == "" {
-		fmt.Fprintf(os.Stderr, "Error: %s is missing", IAPClientID)
+		fmt.Fprintf(os.Stderr, "Error: %s is missing\n", IAPClientID)
 		return 1
 	}
 
