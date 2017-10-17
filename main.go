@@ -10,6 +10,7 @@ const (
 
 	GoogleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
 	IAPClientID                  = "IAP_CLIENT_ID"
+	IAPCurlBinary                = "IAP_CURL_BIN"
 )
 
 var helpText string = `Usage: curl
@@ -23,6 +24,7 @@ func run(args []string) int {
 	var (
 		creds    = os.Getenv(GoogleApplicationCredentials)
 		clientID = os.Getenv(IAPClientID)
+		binary   = os.Getenv(IAPCurlBinary)
 	)
 
 	if len(args) > 0 {
@@ -42,6 +44,10 @@ func run(args []string) int {
 		return 1
 	}
 
+	if binary == "" {
+		binary = "curl"
+	}
+
 	token, err := getToken(creds, clientID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
@@ -56,7 +62,7 @@ func run(args []string) int {
 		args...,
 	)
 
-	if err := doCurl(curlArgs); err != nil {
+	if err := doCurl(binary, curlArgs); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		return 1
 	}
