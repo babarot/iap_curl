@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	neturl "net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -81,13 +82,17 @@ func (cfg *Config) LoadFile(file string) error {
 	return json.NewEncoder(f).Encode(cfg)
 }
 
-func (cfg *Config) GetEnv(url string) (env Env) {
+func (cfg *Config) GetEnv(url string) (env Env, err error) {
+	u, err := neturl.Parse(url)
+	if err != nil {
+		return
+	}
 	for _, service := range cfg.Services {
-		if strings.Contains(service.URL, url) {
-			return service.Env
+		if strings.Contains(service.URL, u.Host) {
+			return service.Env, nil
 		}
 	}
-	return env
+	return
 }
 
 func (cfg *Config) GetURLs() (list []string) {

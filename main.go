@@ -65,7 +65,11 @@ func run(args []string) int {
 			return 1
 		}
 
-		env := cfg.GetEnv(args[0])
+		env, err := cfg.GetEnv(args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+			return 1
+		}
 		if credentials == "" {
 			credentials = env.Credentials
 		}
