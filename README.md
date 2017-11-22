@@ -1,18 +1,17 @@
 iap_curl
 ========
 
-curl wrapper for making HTTP request to IAP-protected app in CLI more easier than curl
+iap_curl is a curl wrapper for making HTTP request to IAP-protected app in CLI more easier than curl
 
 ## Usage
 
 ```console
 $ export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
 $ export IAP_CLIENT_ID="342624545358-asdfd8fas9df8sd7ga0sdguadfpvqp69.apps.googleusercontent.com"
-$
 $ iap_curl http://iap-protected.webapp.com
 ```
 
-The option of iap_curl is fully compatible with curl one.
+The options of `iap_curl` are fully compatible with curl.
 
 If you want to use [httpstat](https://github.com/b4b4r07/httpstat), please specify the `IAP_CURL_BIN` environment variable:
 
@@ -45,6 +44,37 @@ Body discarded
                                    pretransfer:381ms             |                  |
                                                      starttransfer:684ms            |
                                                                                 total:684ms
+```
+
+## Advanced usage
+
+You can save the URL of frequently used service together with its Env (`IAP_CLIENT_ID` ...) in a JSON file (see also [#1](https://github.com/b4b4r07/iap_curl/issues/1)). This file is located in `~/.config/iap_curl/config.json`.
+
+```json
+{
+  "service": [
+    {
+      "url": "https://my.service.com/health",
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/Users/b4b4r07/Downloads/my-service-dev-b5e624fd28ee.json",
+        "IAP_CLIENT_ID": "839558305167-s3akt4doo38lckhaac1ucfdp0e4921tc.apps.googleusercontent.com",
+        "IAP_CURL_BIN": "curl"
+      }
+    }
+  ]
+}
+```
+
+Thanks to that, you can access more easier like curl.
+
+```console
+$ iap_curl https://my.service.com/health
+```
+
+Also, some original options are added. So you can use more and more easier to access the service by using [peco](https://github.com/peco/peco)/[fzf](https://github.com/junegunn/fzf). For more information about its options, please see `iap_curl --help`.
+
+```console
+$ iap_curl $(iap_curl --list-urls | peco) # peco is similar to fzf
 ```
 
 ## Installation
