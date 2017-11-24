@@ -48,6 +48,7 @@ func main() {
 }
 
 func run(args []string) int {
+	var url string
 	if len(args) > 0 {
 		switch args[0] {
 		case "-h", "--help":
@@ -63,11 +64,16 @@ func run(args []string) int {
 			}
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 			return 1
+		default:
+			url = args[0]
 		}
 
-		env, err := cfg.GetEnv(args[0])
+		env, err := cfg.GetEnv(url)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+			for _, url := range cfg.SimilarURLs(url) {
+			}
+			fmt.Fprintf(os.Stderr, "       similar urls found %q\n")
 			return 1
 		}
 		if credentials == "" {
