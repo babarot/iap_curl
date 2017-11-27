@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -34,15 +36,10 @@ func main() {
 	dir, _ := configDir()
 	json := filepath.Join(dir, "config.json")
 
-	err := cfg.LoadFile(json)
-	if err != nil {
+	if err := cfg.LoadFile(json); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-
-	credentials = os.Getenv(GoogleApplicationCredentials)
-	clientID = os.Getenv(IAPClientID)
-	binary = os.Getenv(IAPCurlBinary)
 
 	os.Exit(run(os.Args[1:]))
 }
@@ -71,13 +68,11 @@ func run(args []string) int {
 		env, err := cfg.GetEnv(url)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-			for _, url := range cfg.SimilarURLs(url) {
-			}
-			fmt.Fprintf(os.Stderr, "       similar urls found %q\n")
+			fmt.Fprintf(os.Stderr, "       similar urls found %q\n", cfg.SimilarURLs(url))
 			return 1
 		}
 		if credentials == "" {
-			credentials = env.Credentials
+			credentials, _ = homedir.Expand(env.Credentials)
 		}
 		if clientID == "" {
 			clientID = env.ClientID
