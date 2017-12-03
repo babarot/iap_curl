@@ -15,7 +15,7 @@ import (
 )
 
 type Config struct {
-	Services []Service `json:"service"`
+	Services []Service `json:"services"`
 }
 
 type Service struct {

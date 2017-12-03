@@ -52,7 +52,7 @@ You can save the URL of frequently used service together with its Env (`IAP_CLIE
 
 ```json
 {
-  "service": [
+  "services": [
     {
       "url": "https://my.service.com/health",
       "env": {
