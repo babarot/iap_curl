@@ -62,8 +62,10 @@ func run(args []string) int {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 			return 1
 		default:
-			url = args[0]
+			// url = args[0]
 		}
+
+		url = args[len(args)-1]
 
 		env, err := cfg.GetEnv(url)
 		if err != nil {
@@ -71,6 +73,9 @@ func run(args []string) int {
 			fmt.Fprintf(os.Stderr, "       similar urls found %q\n", cfg.SimilarURLs(url))
 			return 1
 		}
+		credentials = os.Getenv(GoogleApplicationCredentials)
+		clientID = os.Getenv(IAPClientID)
+		binary = os.Getenv(IAPCurlBinary)
 		if credentials == "" {
 			credentials, _ = homedir.Expand(env.Credentials)
 		}
