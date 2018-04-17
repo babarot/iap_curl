@@ -1,4 +1,4 @@
-package proxy
+package main
 
 import (
 	"context"
@@ -28,7 +28,7 @@ type IAP struct {
 	ID string
 }
 
-func New(sa, id string) (*IAP, error) {
+func newIAP(sa, id string) (*IAP, error) {
 	if sa == "" {
 		return &IAP{}, errors.New("service account is missing")
 	}
