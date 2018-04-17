@@ -12,6 +12,11 @@ import (
 	"strings"
 )
 
+const (
+	app     = "iap_curl"
+	version = "0.1.1"
+)
+
 // CLI represents the attributes for command-line interface
 type CLI struct {
 	opt  option
@@ -26,6 +31,8 @@ type CLI struct {
 type option struct {
 	list bool
 	edit bool
+
+	version bool
 }
 
 func main() {
@@ -49,6 +56,8 @@ func newCLI(args []string) (CLI, error) {
 			c.opt.list = true
 		case "--edit", "--edit-config":
 			c.opt.edit = true
+		case "--version":
+			c.opt.version = true
 		default:
 			u, err := url.Parse(arg)
 			if err == nil {
@@ -74,7 +83,7 @@ func (c CLI) exit(msg interface{}) int {
 		fmt.Fprintf(c.stdout, "%s\n", m)
 		return 0
 	case error:
-		fmt.Fprintf(c.stderr, "Error: %s\n", m.Error())
+		fmt.Fprintf(c.stderr, "[ERROR] %s: %s\n", app, m.Error())
 		return 1
 	case int:
 		return m
@@ -86,6 +95,10 @@ func (c CLI) exit(msg interface{}) int {
 }
 
 func (c CLI) run() int {
+	if c.opt.version {
+		return c.exit(fmt.Sprintf("%s v%s (runtime: %s)", app, version, runtime.Version()))
+	}
+
 	if c.opt.list {
 		return c.exit(strings.Join(c.cfg.GetURLs(), "\n"))
 	}
@@ -123,6 +136,10 @@ func (c CLI) run() int {
 	return c.exit(runCommand(env.Binary, args))
 }
 
+func (c CLI) debug(a ...interface{}) {
+	fmt.Fprint(c.stderr, a...)
+}
+
 func (c CLI) getURL() string {
 	if len(c.urls) == 0 {
 		return ""
@@ -131,7 +148,6 @@ func (c CLI) getURL() string {
 }
 
 func runCommand(command string, args []string) error {
-	// Check if you have curl command
 	if _, err := exec.LookPath(command); err != nil {
 		return err
 	}
