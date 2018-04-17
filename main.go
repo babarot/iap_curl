@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// TokenURI is the base uri of google oauth API
 	TokenURI = "https://www.googleapis.com/oauth2/v4/token"
 
 	GoogleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -70,12 +71,7 @@ func run(args []string) int {
 	url := args[len(args)-1]
 	env, err := cfg.GetEnv(url)
 	if err != nil {
-		similarURLs := cfg.SimilarURLs(url)
-		if len(similarURLs) > 0 {
-			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-			fmt.Fprintf(os.Stderr, "       similar urls found %q\n", similarURLs)
-			return 1
-		}
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	}
 	credentials = os.Getenv(GoogleApplicationCredentials)
 	clientID = os.Getenv(IAPClientID)
@@ -102,7 +98,12 @@ func run(args []string) int {
 		binary = "curl"
 	}
 
-	token, err := getToken(credentials, clientID)
+	proxy, err := newIapClient(credentials, clientID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
+		return 1
+	}
+	token, err := proxy.GetToken()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		return 1

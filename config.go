@@ -4,14 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	neturl "net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-
-	"github.com/agext/levenshtein"
 )
 
 type Config struct {
@@ -121,20 +118,4 @@ func (cfg *Config) Edit() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	return cmd.Run()
-}
-
-func (cfg *Config) SimilarURLs(url string) (urls []string) {
-	u1, _ := neturl.Parse(url)
-	for _, service := range cfg.Services {
-		u2, _ := neturl.Parse(service.URL)
-		degree := round(levenshtein.Similarity(u1.Host, u2.Host, nil) * 100)
-		if degree > 50 {
-			urls = append(urls, service.URL)
-		}
-	}
-	return
-}
-
-func round(f float64) float64 {
-	return math.Floor(f + .5)
 }

@@ -17,6 +17,24 @@ import (
 	"golang.org/x/oauth2/jws"
 )
 
+type iapClient struct {
+	serviceAccount string
+	clientID       string
+}
+
+func newIapClient(sa, clientID string) (*iapClient, error) {
+	if sa == "" {
+		return &iapClient{}, errors.New("service account is missing")
+	}
+	if clientID == "" {
+		return &iapClient{}, errors.New("client ID is missing")
+	}
+	return &iapClient{
+		serviceAccount: sa,
+		clientID:       clientID,
+	}, nil
+}
+
 func readRsaPrivateKey(bytes []byte) (key *rsa.PrivateKey, err error) {
 	block, _ := pem.Decode(bytes)
 	if block == nil {
@@ -52,8 +70,8 @@ func readRsaPrivateKey(bytes []byte) (key *rsa.PrivateKey, err error) {
 	return
 }
 
-func getToken(saPath, clientID string) (token string, err error) {
-	sa, err := ioutil.ReadFile(saPath)
+func (c *iapClient) GetToken() (token string, err error) {
+	sa, err := ioutil.ReadFile(c.serviceAccount)
 	if err != nil {
 		return
 	}
@@ -70,7 +88,7 @@ func getToken(saPath, clientID string) (token string, err error) {
 		Iat: iat.Unix(),
 		Exp: exp.Unix(),
 		PrivateClaims: map[string]interface{}{
-			"target_audience": clientID,
+			"target_audience": c.clientID,
 		},
 	}
 	jwsHeader := &jws.Header{
