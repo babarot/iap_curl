@@ -9,6 +9,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	homedir "github.com/mitchellh/go-homedir"
+)
+
+const (
+	envCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
+	envClientID    = "IAP_CLIENT_ID"
+	envCurlCommand = "IAP_CURL_BIN"
 )
 
 type Config struct {
@@ -81,7 +89,7 @@ func (cfg *Config) LoadFile(file string) error {
 	return json.NewEncoder(f).Encode(cfg)
 }
 
-func (cfg *Config) GetEnv(url string) (env Env, err error) {
+func (cfg *Config) getEnvFromFile(url string) (env Env, err error) {
 	u1, _ := neturl.Parse(url)
 	for _, service := range cfg.Services {
 		u2, _ := neturl.Parse(service.URL)
@@ -91,6 +99,36 @@ func (cfg *Config) GetEnv(url string) (env Env, err error) {
 	}
 	err = fmt.Errorf("%s: no such host in config file", u1.Host)
 	return
+}
+
+func (cfg *Config) GetEnv(url string) (env Env, err error) {
+	env, _ = cfg.getEnvFromFile(url)
+	credentials := os.Getenv(envCredentials)
+	clientID := os.Getenv(envClientID)
+	binary := os.Getenv(envCurlCommand)
+	if credentials == "" {
+		credentials, _ = homedir.Expand(env.Credentials)
+	}
+	if clientID == "" {
+		clientID = env.ClientID
+	}
+	if binary == "" {
+		binary = env.Binary
+	}
+	if credentials == "" {
+		return env, fmt.Errorf("%s is missing", envCredentials)
+	}
+	if clientID == "" {
+		return env, fmt.Errorf("%s is missing", envClientID)
+	}
+	if binary == "" {
+		binary = "curl"
+	}
+	return Env{
+		Credentials: credentials,
+		ClientID:    clientID,
+		Binary:      binary,
+	}, nil
 }
 
 func (cfg *Config) GetURLs() (list []string) {

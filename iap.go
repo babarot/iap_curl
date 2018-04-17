@@ -30,10 +30,10 @@ type IAP struct {
 
 func newIAP(sa, id string) (*IAP, error) {
 	if sa == "" {
-		return &IAP{}, errors.New("service account is missing")
+		return &IAP{}, errors.New("Service Account is missing")
 	}
 	if id == "" {
-		return &IAP{}, errors.New("IAP ID is missing")
+		return &IAP{}, errors.New("Client ID is missing")
 	}
 	return &IAP{
 		SA: sa,
@@ -41,6 +41,7 @@ func newIAP(sa, id string) (*IAP, error) {
 	}, nil
 }
 
+// GetToken returns JWT token for authz
 func (c *IAP) GetToken() (token string, err error) {
 	sa, err := ioutil.ReadFile(c.SA)
 	if err != nil {
