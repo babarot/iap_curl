@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/b4b4r07/iap_curl/proxy"
 	homedir "github.com/mitchellh/go-homedir"
 )
 
@@ -96,7 +95,7 @@ func run(args []string) int {
 		binary = "curl"
 	}
 
-	iap, err := proxy.New(credentials, clientID)
+	iap, err := NewIAP(credentials, clientID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		return 1
