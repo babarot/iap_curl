@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -75,42 +76,48 @@ func newCLI(args []string) (CLI, error) {
 	return cli, nil
 }
 
+func (c CLI) exit(msg interface{}) int {
+	switch m := msg.(type) {
+	case string:
+		fmt.Fprintf(c.stdout, "%s\n", m)
+		return 0
+	case error:
+		fmt.Fprintf(c.stderr, "Error: %s\n", m.Error())
+		return 1
+	case nil:
+		return 0
+	default:
+		panic(msg)
+	}
+}
+
 func (c CLI) run() int {
 	if c.opt.list {
-		fmt.Fprintln(c.stdout, strings.Join(c.cfg.GetURLs(), "\n"))
-		return 0
+		return c.exit(strings.Join(c.cfg.GetURLs(), "\n"))
 	}
 
 	if c.opt.edit {
-		if err := c.cfg.Edit(); err != nil {
-			fmt.Fprintf(c.stderr, "Error: %v\n", err.Error())
-			return 1
-		}
-		return 0
+		return c.exit(c.cfg.Edit())
 	}
 
 	url := c.getURL()
 	if url == "" {
-		fmt.Fprintf(c.stderr, "invalid url or url not given\n")
-		return 1
+		return c.exit(errors.New("invalid url or url not given"))
 	}
 
 	env, _ := c.cfg.GetEnv(url)
 	i, err := getInfo(env)
 	if err != nil {
-		fmt.Fprintf(c.stderr, "Error: %s\n", err.Error())
-		return 1
+		return c.exit(err)
 	}
 
 	iap, err := newIAP(i.credentials, i.clientID)
 	if err != nil {
-		fmt.Fprintf(c.stderr, "Error: %v\n", err.Error())
-		return 1
+		return c.exit(err)
 	}
 	token, err := iap.GetToken()
 	if err != nil {
-		fmt.Fprintf(c.stderr, "Error: %v\n", err.Error())
-		return 1
+		return c.exit(err)
 	}
 
 	authHeader := fmt.Sprintf("'Authorization: Bearer %s'", token)
@@ -120,12 +127,7 @@ func (c CLI) run() int {
 	)
 	args = append(args, url)
 
-	if err := runCommand(i.binary, args); err != nil {
-		fmt.Fprintf(c.stderr, "Error: %v\n", err.Error())
-		return 1
-	}
-
-	return 0
+	return c.exit(runCommand(i.binary, args))
 }
 
 func (c CLI) getURL() string {
