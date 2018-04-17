@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-func doCurl(binary string, args []string) error {
+func runCommand(binary string, args []string) error {
 	// Check if you have curl command
 	command := binary
 	if _, err := exec.LookPath(command); err != nil {

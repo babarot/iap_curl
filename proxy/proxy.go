@@ -1,4 +1,4 @@
-package main
+package proxy
 
 import (
 	"context"
@@ -17,61 +17,32 @@ import (
 	"golang.org/x/oauth2/jws"
 )
 
-type iapClient struct {
-	serviceAccount string
-	clientID       string
+const (
+	// TokenURI is the base uri of google oauth API
+	TokenURI = "https://www.googleapis.com/oauth2/v4/token"
+)
+
+// IAP represents the information needed to access IAP-protected app
+type IAP struct {
+	SA string
+	ID string
 }
 
-func newIapClient(sa, clientID string) (*iapClient, error) {
+func New(sa, id string) (*IAP, error) {
 	if sa == "" {
-		return &iapClient{}, errors.New("service account is missing")
+		return &IAP{}, errors.New("service account is missing")
 	}
-	if clientID == "" {
-		return &iapClient{}, errors.New("client ID is missing")
+	if id == "" {
+		return &IAP{}, errors.New("IAP ID is missing")
 	}
-	return &iapClient{
-		serviceAccount: sa,
-		clientID:       clientID,
+	return &IAP{
+		SA: sa,
+		ID: id,
 	}, nil
 }
 
-func readRsaPrivateKey(bytes []byte) (key *rsa.PrivateKey, err error) {
-	block, _ := pem.Decode(bytes)
-	if block == nil {
-		err = errors.New("invalid private key data")
-		return
-	}
-
-	if block.Type == "RSA PRIVATE KEY" {
-		key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-		if err != nil {
-			return
-		}
-	} else if block.Type == "PRIVATE KEY" {
-		keyInterface, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		var ok bool
-		key, ok = keyInterface.(*rsa.PrivateKey)
-		if !ok {
-			return nil, errors.New("not RSA private key")
-		}
-	} else {
-		return nil, fmt.Errorf("invalid private key type: %s", block.Type)
-	}
-
-	key.Precompute()
-
-	if err := key.Validate(); err != nil {
-		return nil, err
-	}
-
-	return
-}
-
-func (c *iapClient) GetToken() (token string, err error) {
-	sa, err := ioutil.ReadFile(c.serviceAccount)
+func (c *IAP) GetToken() (token string, err error) {
+	sa, err := ioutil.ReadFile(c.SA)
 	if err != nil {
 		return
 	}
@@ -88,7 +59,7 @@ func (c *iapClient) GetToken() (token string, err error) {
 		Iat: iat.Unix(),
 		Exp: exp.Unix(),
 		PrivateClaims: map[string]interface{}{
-			"target_audience": c.clientID,
+			"target_audience": c.ID,
 		},
 	}
 	jwsHeader := &jws.Header{
@@ -127,5 +98,40 @@ func (c *iapClient) GetToken() (token string, err error) {
 	}
 
 	token = tokenRes.IDToken
+	return
+}
+
+func readRsaPrivateKey(bytes []byte) (key *rsa.PrivateKey, err error) {
+	block, _ := pem.Decode(bytes)
+	if block == nil {
+		err = errors.New("invalid private key data")
+		return
+	}
+
+	if block.Type == "RSA PRIVATE KEY" {
+		key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return
+		}
+	} else if block.Type == "PRIVATE KEY" {
+		keyInterface, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		key, ok = keyInterface.(*rsa.PrivateKey)
+		if !ok {
+			return nil, errors.New("not RSA private key")
+		}
+	} else {
+		return nil, fmt.Errorf("invalid private key type: %s", block.Type)
+	}
+
+	key.Precompute()
+
+	if err := key.Validate(); err != nil {
+		return nil, err
+	}
+
 	return
 }

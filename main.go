@@ -6,13 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/b4b4r07/iap_curl/proxy"
 	homedir "github.com/mitchellh/go-homedir"
 )
 
 const (
-	// TokenURI is the base uri of google oauth API
-	TokenURI = "https://www.googleapis.com/oauth2/v4/token"
-
 	GoogleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
 	IAPClientID                  = "IAP_CLIENT_ID"
 	IAPCurlBinary                = "IAP_CURL_BIN"
@@ -98,24 +96,24 @@ func run(args []string) int {
 		binary = "curl"
 	}
 
-	proxy, err := newIapClient(credentials, clientID)
+	iap, err := proxy.New(credentials, clientID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		return 1
 	}
-	token, err := proxy.GetToken()
+	token, err := iap.GetToken()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		return 1
 	}
 
 	authHeader := fmt.Sprintf("'Authorization: Bearer %s'", token)
-	curlArgs := append(
+	commandArgs := append(
 		[]string{"-H", authHeader}, // For IAP header
 		args..., // Original args
 	)
 
-	if err := doCurl(binary, curlArgs); err != nil {
+	if err := runCommand(binary, commandArgs); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		return 1
 	}
