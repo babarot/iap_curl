@@ -1,123 +1,167 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
-
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 const (
-	TokenURI = "https://www.googleapis.com/oauth2/v4/token"
-
-	GoogleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
-	IAPClientID                  = "IAP_CLIENT_ID"
-	IAPCurlBinary                = "IAP_CURL_BIN"
+	app     = "iap_curl"
+	version = "0.1.1"
 )
 
-const helpText string = `Usage: curl
+// CLI represents the attributes for command-line interface
+type CLI struct {
+	opt  option
+	args []string
+	urls []url.URL
+	cfg  Config
 
-Extended options:
-  --list, --list-urls    List service URLs
-  --edit, --edit-config  Edit config file
-`
-
-var (
-	credentials string
-	clientID    string
-	binary      string
-
-	cfg Config
-)
-
-func main() {
-	dir, _ := configDir()
-	json := filepath.Join(dir, "config.json")
-
-	if err := cfg.LoadFile(json); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	os.Exit(run(os.Args[1:]))
+	stdout io.Writer
+	stderr io.Writer
 }
 
-func run(args []string) int {
-	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "Error: too few arguments\n")
-		return 1
+type option struct {
+	list bool
+	edit bool
+
+	version bool
+}
+
+func main() {
+	cli, err := newCLI(os.Args[1:])
+	if err != nil {
+		panic(err)
 	}
-	switch args[0] {
-	case "-h", "--help":
-		fmt.Fprint(os.Stderr, helpText)
-		return 1
-	case "--list-urls", "--list":
-		fmt.Println(strings.Join(cfg.GetURLs(), "\n"))
-		return 0
-	case "--edit-config", "--edit":
-		if err := cfg.Edit(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
-			return 1
+	os.Exit(cli.run())
+}
+
+func newCLI(args []string) (CLI, error) {
+	var c CLI
+
+	// TODO: make it customizable
+	c.stdout = os.Stdout
+	c.stderr = os.Stderr
+
+	for _, arg := range args {
+		switch arg {
+		case "--list", "--list-urls":
+			c.opt.list = true
+		case "--edit", "--edit-config":
+			c.opt.edit = true
+		case "--version":
+			c.opt.version = true
+		default:
+			u, err := url.Parse(arg)
+			if err == nil {
+				c.urls = append(c.urls, *u)
+			} else {
+				c.args = append(c.args, arg)
+			}
 		}
+	}
+
+	dir, _ := configDir()
+	json := filepath.Join(dir, "config.json")
+	if err := c.cfg.LoadFile(json); err != nil {
+		return c, err
+	}
+
+	return c, nil
+}
+
+func (c CLI) exit(msg interface{}) int {
+	switch m := msg.(type) {
+	case string:
+		fmt.Fprintf(c.stdout, "%s\n", m)
+		return 0
+	case error:
+		fmt.Fprintf(c.stderr, "[ERROR] %s: %s\n", app, m.Error())
+		return 1
+	case int:
+		return m
+	case nil:
 		return 0
 	default:
-		// Ignore other arguments
+		panic(msg)
+	}
+}
+
+func (c CLI) run() int {
+	if c.opt.version {
+		return c.exit(fmt.Sprintf("%s v%s (runtime: %s)", app, version, runtime.Version()))
 	}
 
-	// The last argument is regarded as an URL
-	url := args[len(args)-1]
-	env, err := cfg.GetEnv(url)
+	if c.opt.list {
+		return c.exit(strings.Join(c.cfg.GetURLs(), "\n"))
+	}
+
+	if c.opt.edit {
+		return c.exit(c.cfg.Edit())
+	}
+
+	url := c.getURL()
+	if url == "" {
+		return c.exit(errors.New("invalid url or url not given"))
+	}
+
+	env, err := c.cfg.GetEnv(url)
 	if err != nil {
-		similarURLs := cfg.SimilarURLs(url)
-		if len(similarURLs) > 0 {
-			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-			fmt.Fprintf(os.Stderr, "       similar urls found %q\n", similarURLs)
-			return 1
-		}
-	}
-	credentials = os.Getenv(GoogleApplicationCredentials)
-	clientID = os.Getenv(IAPClientID)
-	binary = os.Getenv(IAPCurlBinary)
-	if credentials == "" {
-		credentials, _ = homedir.Expand(env.Credentials)
-	}
-	if clientID == "" {
-		clientID = env.ClientID
-	}
-	if binary == "" {
-		binary = env.Binary
+		return c.exit(err)
 	}
 
-	if credentials == "" {
-		fmt.Fprintf(os.Stderr, "Error: %s is missing\n", GoogleApplicationCredentials)
-		return 1
-	}
-	if clientID == "" {
-		fmt.Fprintf(os.Stderr, "Error: %s is missing\n", IAPClientID)
-		return 1
-	}
-	if binary == "" {
-		binary = "curl"
-	}
-
-	token, err := getToken(credentials, clientID)
+	iap, err := newIAP(env.Credentials, env.ClientID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
-		return 1
+		return c.exit(err)
+	}
+	token, err := iap.GetToken()
+	if err != nil {
+		return c.exit(err)
 	}
 
 	authHeader := fmt.Sprintf("'Authorization: Bearer %s'", token)
-	curlArgs := append(
+	args := append(
 		[]string{"-H", authHeader}, // For IAP header
-		args..., // Original args
+		c.args..., // Original args
 	)
+	args = append(args, url)
 
-	if err := doCurl(binary, curlArgs); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
-		return 1
+	return c.exit(runCommand(env.Binary, args))
+}
+
+func (c CLI) debug(a ...interface{}) {
+	fmt.Fprint(c.stderr, a...)
+}
+
+func (c CLI) getURL() string {
+	if len(c.urls) == 0 {
+		return ""
 	}
+	return c.urls[0].String()
+}
 
-	return 0
+func runCommand(command string, args []string) error {
+	if _, err := exec.LookPath(command); err != nil {
+		return err
+	}
+	for _, arg := range args {
+		command += " " + arg
+	}
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", command)
+	} else {
+		cmd = exec.Command("sh", "-c", command)
+	}
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
