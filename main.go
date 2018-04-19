@@ -133,7 +133,8 @@ func (c CLI) run() int {
 	)
 	args = append(args, url)
 
-	return c.exit(runCommand(env.Binary, args))
+	s := newShell(env.Binary, args)
+	return c.exit(s.run())
 }
 
 func (c CLI) debug(a ...interface{}) {
@@ -147,11 +148,32 @@ func (c CLI) getURL() string {
 	return c.urls[0].String()
 }
 
-func runCommand(command string, args []string) error {
+type shell struct {
+	stdin   io.Reader
+	stdout  io.Writer
+	stderr  io.Writer
+	env     map[string]string
+	command string
+	args    []string
+}
+
+func newShell(command string, args []string) shell {
+	return shell{
+		stdin:   os.Stdin,
+		stdout:  os.Stdout,
+		stderr:  os.Stderr,
+		env:     map[string]string{},
+		command: command,
+		args:    args,
+	}
+}
+
+func (s shell) run() error {
+	command := s.command
 	if _, err := exec.LookPath(command); err != nil {
 		return err
 	}
-	for _, arg := range args {
+	for _, arg := range s.args {
 		command += " " + arg
 	}
 	var cmd *exec.Cmd
@@ -160,8 +182,11 @@ func runCommand(command string, args []string) error {
 	} else {
 		cmd = exec.Command("sh", "-c", command)
 	}
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
+	cmd.Stderr = s.stderr
+	cmd.Stdout = s.stdout
+	cmd.Stdin = s.stdin
+	for k, v := range s.env {
+		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", k, v))
+	}
 	return cmd.Run()
 }
