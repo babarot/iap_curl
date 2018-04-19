@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,6 +23,8 @@ const (
 
 type Config struct {
 	Services []Service `json:"services"`
+
+	path string
 }
 
 type Service struct {
@@ -57,6 +61,7 @@ func configDir() (string, error) {
 }
 
 func (cfg *Config) LoadFile(file string) error {
+	cfg.path = file
 	_, err := os.Stat(file)
 	if err == nil {
 		raw, _ := ioutil.ReadFile(file)
@@ -156,4 +161,31 @@ func (cfg *Config) Edit() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	return cmd.Run()
+}
+
+func (cfg *Config) Registered(url string) bool {
+	u1, _ := neturl.Parse(url)
+	for _, service := range cfg.Services {
+		u2, _ := neturl.Parse(service.URL)
+		if u1.Host == u2.Host {
+			return true
+		}
+	}
+	return false
+}
+
+func (cfg *Config) Register(s Service) error {
+	cfg.Services = append(cfg.Services, s)
+	b, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	var out bytes.Buffer
+	if err := json.Indent(&out, b, "", "  "); err != nil {
+		return err
+	}
+	file, _ := os.OpenFile(cfg.path, os.O_WRONLY, 0644)
+	w := bufio.NewWriter(file)
+	w.Write(out.Bytes())
+	return w.Flush()
 }

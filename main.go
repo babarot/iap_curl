@@ -133,6 +133,13 @@ func (c CLI) run() int {
 	)
 	args = append(args, url)
 
+	if !c.cfg.Registered(url) {
+		c.cfg.Register(Service{
+			URL: url,
+			Env: env,
+		})
+	}
+
 	s := newShell(env.Binary, args)
 	return c.exit(s.run())
 }
