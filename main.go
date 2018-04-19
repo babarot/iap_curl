@@ -17,6 +17,18 @@ const (
 	version = "0.1.1"
 )
 
+const help = `iap_curl - curl wrapper for making HTTP request to IAP-protected app
+
+Usage:
+  iap_curl [flags] URL
+
+Flags:
+  --edit, --edit-config   edit config
+  --list, --list-urls     list URLs described in config
+  --help                  show help message
+  --version               show version
+`
+
 // CLI represents the attributes for command-line interface
 type CLI struct {
 	opt  option
@@ -32,6 +44,7 @@ type option struct {
 	list bool
 	edit bool
 
+	help    bool
 	version bool
 }
 
@@ -58,6 +71,8 @@ func newCLI(args []string) (CLI, error) {
 			c.opt.edit = true
 		case "--version":
 			c.opt.version = true
+		case "--help":
+			c.opt.help = true
 		default:
 			u, err := url.Parse(arg)
 			if err == nil {
@@ -95,6 +110,10 @@ func (c CLI) exit(msg interface{}) int {
 }
 
 func (c CLI) run() int {
+	if c.opt.help {
+		return c.exit(help)
+	}
+
 	if c.opt.version {
 		return c.exit(fmt.Sprintf("%s v%s (runtime: %s)", app, version, runtime.Version()))
 	}
@@ -126,19 +145,19 @@ func (c CLI) run() int {
 		return c.exit(err)
 	}
 
-	authHeader := fmt.Sprintf("'Authorization: Bearer %s'", token)
-	args := append(
-		[]string{"-H", authHeader}, // For IAP header
-		c.args..., // Original args
-	)
-	args = append(args, url)
-
 	if !c.cfg.Registered(url) {
 		c.cfg.Register(Service{
 			URL: url,
 			Env: env,
 		})
 	}
+
+	authHeader := fmt.Sprintf("'Authorization: Bearer %s'", token)
+	args := append(
+		[]string{"-H", authHeader}, // For IAP header
+		c.args..., // Original args
+	)
+	args = append(args, url)
 
 	s := newShell(env.Binary, args)
 	return c.exit(s.run())
