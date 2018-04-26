@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -41,40 +40,37 @@ type CLI struct {
 }
 
 type option struct {
-	list bool
-	edit bool
-
-	help    bool
 	version bool
+	help    bool
+	list    bool
+	edit    bool
 }
 
 func main() {
-	cli, err := newCLI(os.Args[1:])
-	if err != nil {
-		panic(err)
-	}
-	os.Exit(cli.run())
+	os.Exit(newCLI(os.Args[1:]).run())
 }
 
-func newCLI(args []string) (CLI, error) {
+func newCLI(args []string) CLI {
 	var c CLI
 
-	// TODO: make it customizable
 	c.stdout = os.Stdout
 	c.stderr = os.Stderr
 
+	// Do not handle error
+	c.cfg.Load()
+
 	for _, arg := range args {
 		switch arg {
+		case "--help":
+			c.opt.help = true
+		case "--version":
+			c.opt.version = true
 		case "--list", "--list-urls":
 			c.opt.list = true
 		case "--edit", "--edit-config":
 			c.opt.edit = true
-		case "--version":
-			c.opt.version = true
-		case "--help":
-			c.opt.help = true
 		default:
-			u, err := url.Parse(arg)
+			u, err := url.ParseRequestURI(arg)
 			if err == nil {
 				c.urls = append(c.urls, *u)
 			} else {
@@ -83,13 +79,7 @@ func newCLI(args []string) (CLI, error) {
 		}
 	}
 
-	dir, _ := configDir()
-	json := filepath.Join(dir, "config.json")
-	if err := c.cfg.LoadFile(json); err != nil {
-		return c, err
-	}
-
-	return c, nil
+	return c
 }
 
 func (c CLI) exit(msg interface{}) int {
