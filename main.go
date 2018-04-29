@@ -84,16 +84,16 @@ func newCLI(args []string) CLI {
 
 func (c CLI) exit(msg interface{}) int {
 	switch m := msg.(type) {
+	case int:
+		return m
+	case nil:
+		return 0
 	case string:
 		fmt.Fprintf(c.stdout, "%s\n", m)
 		return 0
 	case error:
 		fmt.Fprintf(c.stderr, "[ERROR] %s: %s\n", app, m.Error())
 		return 1
-	case int:
-		return m
-	case nil:
-		return 0
 	default:
 		panic(msg)
 	}
@@ -144,8 +144,8 @@ func (c CLI) run() int {
 
 	authHeader := fmt.Sprintf("'Authorization: Bearer %s'", token)
 	args := append(
-		[]string{"-H", authHeader}, // For IAP header
-		c.args..., // Original args
+		[]string{"-H", authHeader}, // For IAP
+		c.args...,
 	)
 	args = append(args, url)
 

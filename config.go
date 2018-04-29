@@ -204,7 +204,10 @@ func (cfg *Config) Register(s Service) error {
 	if err := json.Indent(&out, b, "", "  "); err != nil {
 		return err
 	}
-	file, _ := os.OpenFile(cfg.path, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(cfg.path, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
 	w := bufio.NewWriter(file)
 	w.Write(out.Bytes())
 	return w.Flush()
