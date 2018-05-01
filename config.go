@@ -21,17 +21,20 @@ const (
 	envCurlCommand = "IAP_CURL_BIN"
 )
 
+// Config represents
 type Config struct {
 	Services []Service `json:"services"`
 
 	path string
 }
 
+// Service is the URL and its Env pair
 type Service struct {
 	URL string `json:"url"`
 	Env Env    `json:"env"`
 }
 
+// Env represents the environment variables needed to request to IAP-protected app
 type Env struct {
 	Credentials string `json:"GOOGLE_APPLICATION_CREDENTIALS"`
 	ClientID    string `json:"IAP_CLIENT_ID"`
@@ -60,21 +63,16 @@ func configDir() (string, error) {
 	return dir, nil
 }
 
-func (cfg *Config) LoadFile(file string) error {
-	cfg.path = file
-	_, err := os.Stat(file)
+// Create creates config file if it doesn't exist
+func (cfg *Config) Create() error {
+	_, err := os.Stat(cfg.path)
 	if err == nil {
-		raw, _ := ioutil.ReadFile(file)
-		if err := json.Unmarshal(raw, cfg); err != nil {
-			return err
-		}
 		return nil
 	}
-
 	if !os.IsNotExist(err) {
 		return err
 	}
-	f, err := os.Create(file)
+	f, err := os.Create(cfg.path)
 	if err != nil {
 		return err
 	}
@@ -91,7 +89,22 @@ func (cfg *Config) LoadFile(file string) error {
 		}}
 	}
 
-	return json.NewEncoder(f).Encode(cfg)
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
+	return enc.Encode(cfg)
+}
+
+// Load loads config file to struct
+func (cfg *Config) Load() error {
+	dir, _ := configDir()
+	file := filepath.Join(dir, "config.json")
+	cfg.path = file
+	_, err := os.Stat(cfg.path)
+	if err != nil {
+		return err
+	}
+	raw, _ := ioutil.ReadFile(cfg.path)
+	return json.Unmarshal(raw, cfg)
 }
 
 func (cfg *Config) getEnvFromFile(url string) (env Env, err error) {
@@ -106,6 +119,7 @@ func (cfg *Config) getEnvFromFile(url string) (env Env, err error) {
 	return
 }
 
+// GetEnv returns Env includes url
 func (cfg *Config) GetEnv(url string) (env Env, err error) {
 	env, _ = cfg.getEnvFromFile(url)
 	credentials := os.Getenv(envCredentials)
@@ -136,6 +150,7 @@ func (cfg *Config) GetEnv(url string) (env Env, err error) {
 	}, nil
 }
 
+// GetURLs returns URLs described in config file
 func (cfg *Config) GetURLs() (list []string) {
 	for _, service := range cfg.Services {
 		list = append(list, service.URL)
@@ -143,14 +158,17 @@ func (cfg *Config) GetURLs() (list []string) {
 	return
 }
 
+// Edit edits config file
+// If it doesn't exist, it will be automatically created
 func (cfg *Config) Edit() error {
-	dir, _ := configDir()
-	json := filepath.Join(dir, "config.json")
+	if err := cfg.Create(); err != nil {
+		return err
+	}
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		editor = "vim"
 	}
-	command := fmt.Sprintf("%s %s", editor, json)
+	command := fmt.Sprintf("%s %s", editor, cfg.path)
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("cmd", "/c", command)
@@ -163,6 +181,7 @@ func (cfg *Config) Edit() error {
 	return cmd.Run()
 }
 
+// Registered returns true if url exists in config file
 func (cfg *Config) Registered(url string) bool {
 	u1, _ := neturl.Parse(url)
 	for _, service := range cfg.Services {
@@ -174,6 +193,7 @@ func (cfg *Config) Registered(url string) bool {
 	return false
 }
 
+// Register registers service to config file
 func (cfg *Config) Register(s Service) error {
 	cfg.Services = append(cfg.Services, s)
 	b, err := json.Marshal(cfg)
@@ -184,7 +204,10 @@ func (cfg *Config) Register(s Service) error {
 	if err := json.Indent(&out, b, "", "  "); err != nil {
 		return err
 	}
-	file, _ := os.OpenFile(cfg.path, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(cfg.path, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
 	w := bufio.NewWriter(file)
 	w.Write(out.Bytes())
 	return w.Flush()
