@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"github.com/b4b4r07/iap_curl"
 )
 
 const (
@@ -33,7 +35,7 @@ type CLI struct {
 	opt  option
 	args []string
 	urls []url.URL
-	cfg  Config
+	cfg  iap.Config
 
 	stdout io.Writer
 	stderr io.Writer
@@ -126,17 +128,17 @@ func (c CLI) run() int {
 		return c.exit(err)
 	}
 
-	iap, err := newIAP(env.Credentials, env.ClientID)
+	i, err := iap.New(env.Credentials, env.ClientID)
 	if err != nil {
 		return c.exit(err)
 	}
-	token, err := iap.GetToken()
+	token, err := i.GetToken()
 	if err != nil {
 		return c.exit(err)
 	}
 
 	if !c.cfg.Registered(url) {
-		c.cfg.Register(Service{
+		c.cfg.Register(iap.Service{
 			URL: url,
 			Env: env,
 		})
