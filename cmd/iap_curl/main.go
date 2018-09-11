@@ -128,11 +128,11 @@ func (c CLI) run() int {
 		return c.exit(err)
 	}
 
-	app, err := iap.New(env.Credentials, env.ClientID)
+	i, err := iap.New(env.Credentials, env.ClientID)
 	if err != nil {
 		return c.exit(err)
 	}
-	token, err := app.GetToken()
+	token, err := i.GetToken()
 	if err != nil {
 		return c.exit(err)
 	}
