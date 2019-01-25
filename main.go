@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"gopkg.in/alessio/shellescape.v1"
 )
 
 const (
@@ -70,12 +72,7 @@ func newCLI(args []string) CLI {
 		case "--edit", "--edit-config":
 			c.opt.edit = true
 		default:
-			u, err := url.ParseRequestURI(arg)
-			if err == nil {
-				c.urls = append(c.urls, *u)
-			} else {
-				c.args = append(c.args, arg)
-			}
+			c.args = append(c.args, arg)
 		}
 	}
 
@@ -116,6 +113,16 @@ func (c CLI) run() int {
 		return c.exit(c.cfg.Edit())
 	}
 
+	if len(c.args) == 0 {
+		return c.exit(errors.New("too few arguments"))
+	}
+	u, err := url.ParseRequestURI(c.args[len(c.args)-1])
+	if err != nil {
+		return c.exit(err)
+	}
+	c.urls = append(c.urls, *u)
+	c.args = c.args[:len(c.args)-1]
+
 	url := c.getURL()
 	if url == "" {
 		return c.exit(errors.New("invalid url or url not given"))
@@ -142,7 +149,7 @@ func (c CLI) run() int {
 		})
 	}
 
-	authHeader := fmt.Sprintf("'Authorization: Bearer %s'", token)
+	authHeader := fmt.Sprintf("Authorization: Bearer %s", token)
 	args := append(
 		[]string{"-H", authHeader}, // For IAP
 		c.args...,
@@ -190,7 +197,7 @@ func (s shell) run() error {
 		return err
 	}
 	for _, arg := range s.args {
-		command += " " + arg
+		command += " " + shellescape.Quote(arg)
 	}
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
