@@ -1,0 +1,18 @@
+builds:
+  - binary: iap_curl
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+    ldflags:
+     - -X main.Version={{.Version}}
+archive:
+  format: zip
+  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+  files:
+    - README.md
+release:
+  github:
+    owner: b4b4r07
+    name: iap_curl

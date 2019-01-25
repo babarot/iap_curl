@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	app     = "iap_curl"
-	version = "0.1.1"
+	// AppName is this tool name
+	AppName = "iap_curl"
+	// Version is the version information of this tool
+	Version = "0.1.2"
 )
 
 const help = `iap_curl - curl wrapper for making HTTP request to IAP-protected app
@@ -89,7 +91,7 @@ func (c CLI) exit(msg interface{}) int {
 		fmt.Fprintf(c.stdout, "%s\n", m)
 		return 0
 	case error:
-		fmt.Fprintf(c.stderr, "[ERROR] %s: %s\n", app, m.Error())
+		fmt.Fprintf(c.stderr, "[ERROR] %s: %s\n", AppName, m.Error())
 		return 1
 	default:
 		panic(msg)
@@ -102,7 +104,7 @@ func (c CLI) run() int {
 	}
 
 	if c.opt.version {
-		return c.exit(fmt.Sprintf("%s v%s (runtime: %s)", app, version, runtime.Version()))
+		return c.exit(fmt.Sprintf("%s v%s (runtime: %s)", AppName, Version, runtime.Version()))
 	}
 
 	if c.opt.list {
