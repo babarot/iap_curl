@@ -30,8 +30,9 @@ type Config struct {
 
 // Service is the URL and its Env pair
 type Service struct {
-	URL string `json:"url"`
-	Env Env    `json:"env"`
+	URL  string   `json:"url"`
+	Env  Env      `json:"env"`
+	Args []string `json:"args"`
 }
 
 // Env represents the environment variables needed to request to IAP-protected app
@@ -86,6 +87,7 @@ func (cfg *Config) Create() error {
 				ClientID:    "foobar.apps.googleusercontent.com",
 				Binary:      "curl",
 			},
+			Args: []string{},
 		}}
 	}
 
@@ -211,4 +213,14 @@ func (cfg *Config) Register(s Service) error {
 	w := bufio.NewWriter(file)
 	w.Write(out.Bytes())
 	return w.Flush()
+}
+
+// GetServiceArgs returns ...
+func (cfg *Config) GetServiceArgs(url string) []string {
+	for _, service := range cfg.Services {
+		if service.URL == url {
+			return service.Args
+		}
+	}
+	return []string{}
 }

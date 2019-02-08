@@ -154,8 +154,9 @@ func (c CLI) run() int {
 	authHeader := fmt.Sprintf("Authorization: Bearer %s", token)
 	args := append(
 		[]string{"-H", authHeader}, // For IAP
-		c.args...,
+		c.cfg.GetServiceArgs(url)...,
 	)
+	args = append(args, c.args...)
 	args = append(args, url)
 
 	s := newShell(env.Binary, args)
