@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"os"
 	"os/exec"
@@ -55,13 +56,22 @@ func main() {
 }
 
 func newCLI(args []string) CLI {
+	logWriter, err := LogOutput()
+	if err != nil {
+		panic(err)
+	}
+	log.SetOutput(logWriter)
+
 	var c CLI
 
 	c.stdout = os.Stdout
 	c.stderr = os.Stderr
 
 	// Do not handle error
-	c.cfg.Load()
+	err = c.cfg.Load()
+	if err != nil {
+		log.Printf("[WARN] Load returns error but don't stop: %v\n", err)
+	}
 
 	for _, arg := range args {
 		switch arg {
@@ -159,12 +169,11 @@ func (c CLI) run() int {
 	args = append(args, c.args...)
 	args = append(args, url)
 
+	log.Printf("[TRACE] args: %#v\n", args)
+	log.Printf("[TRACE] env: %#v\n", env)
+
 	s := newShell(env.Binary, args)
 	return c.exit(s.run())
-}
-
-func (c CLI) debug(a ...interface{}) {
-	fmt.Fprint(c.stderr, a...)
 }
 
 func (c CLI) getURL() string {
