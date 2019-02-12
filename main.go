@@ -18,7 +18,7 @@ const (
 	// AppName is this tool name
 	AppName = "iap_curl"
 	// Version is the version information of this tool
-	Version = "0.1.2"
+	Version = "0.1.3"
 )
 
 const help = `iap_curl - curl wrapper for making HTTP request to IAP-protected app
