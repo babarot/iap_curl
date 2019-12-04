@@ -40,9 +40,9 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /etc/passwd /etc/passwd
 
-COPY --from=builder /go/bin/app /go/bin/app
+COPY --from=builder /go/bin/app /bin/iap_curl
 
 # Use an unprivileged user.
 USER app
 
-ENTRYPOINT ["/go/bin/app"]
+ENTRYPOINT ["/bin/iap_curl"]
