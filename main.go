@@ -1,54 +1,38 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	homedir "github.com/mitchellh/go-homedir"
 	"io"
 	"log"
-	"net/url"
 	"os"
-	"os/exec"
-	"runtime"
-	"strings"
-
-	"gopkg.in/alessio/shellescape.v1"
 )
 
 const (
 	// AppName is this tool name
-	AppName = "iap_curl"
+	AppName = "iap_token"
 	// Version is the version information of this tool
-	Version = "0.1.3"
+	Version = "0.1.0"
 )
 
-const help = `iap_curl - curl wrapper for making HTTP request to IAP-protected app
+const help = `iap_token
 
 Usage:
-  iap_curl [flags] URL
+
 
 Flags:
-  --edit, --edit-config   edit config
-  --list, --list-urls     list URLs described in config
   --help                  show help message
-  --version               show version
 `
 
 // CLI represents the attributes for command-line interface
 type CLI struct {
-	opt  option
-	args []string
-	urls []url.URL
-	cfg  Config
-
+	opt    option
 	stdout io.Writer
 	stderr io.Writer
 }
 
 type option struct {
-	version bool
-	help    bool
-	list    bool
-	edit    bool
+	help bool
 }
 
 func main() {
@@ -67,24 +51,10 @@ func newCLI(args []string) CLI {
 	c.stdout = os.Stdout
 	c.stderr = os.Stderr
 
-	// Do not handle error
-	err = c.cfg.Load()
-	if err != nil {
-		log.Printf("[WARN] Load returns error but don't stop: %v\n", err)
-	}
-
 	for _, arg := range args {
 		switch arg {
 		case "--help":
 			c.opt.help = true
-		case "--version":
-			c.opt.version = true
-		case "--list", "--list-urls":
-			c.opt.list = true
-		case "--edit", "--edit-config":
-			c.opt.edit = true
-		default:
-			c.args = append(c.args, arg)
 		}
 	}
 
@@ -113,34 +83,7 @@ func (c CLI) run() int {
 		return c.exit(help)
 	}
 
-	if c.opt.version {
-		return c.exit(fmt.Sprintf("%s v%s (runtime: %s)", AppName, Version, runtime.Version()))
-	}
-
-	if c.opt.list {
-		return c.exit(strings.Join(c.cfg.GetURLs(), "\n"))
-	}
-
-	if c.opt.edit {
-		return c.exit(c.cfg.Edit())
-	}
-
-	if len(c.args) == 0 {
-		return c.exit(errors.New("too few arguments"))
-	}
-	u, err := url.ParseRequestURI(c.args[len(c.args)-1])
-	if err != nil {
-		return c.exit(err)
-	}
-	c.urls = append(c.urls, *u)
-	c.args = c.args[:len(c.args)-1]
-
-	url := c.getURL()
-	if url == "" {
-		return c.exit(errors.New("invalid url or url not given"))
-	}
-
-	env, err := c.cfg.GetEnv(url)
+	env, err := GetEnv()
 	if err != nil {
 		return c.exit(err)
 	}
@@ -153,75 +96,39 @@ func (c CLI) run() int {
 	if err != nil {
 		return c.exit(err)
 	}
-
-	if !c.cfg.Registered(url) {
-		c.cfg.Register(Service{
-			URL: url,
-			Env: env,
-		})
-	}
-
-	authHeader := fmt.Sprintf("Authorization: Bearer %s", token)
-	args := append(
-		[]string{"-H", authHeader}, // For IAP
-		c.cfg.GetServiceArgs(url)...,
-	)
-	args = append(args, c.args...)
-	args = append(args, url)
-
-	log.Printf("[TRACE] args: %#v\n", args)
-	log.Printf("[TRACE] env: %#v\n", env)
-
-	s := newShell(env.Binary, args)
-	return c.exit(s.run())
+	fmt.Fprintf(c.stdout, "%s", token)
+	return 0
 }
 
-func (c CLI) getURL() string {
-	if len(c.urls) == 0 {
-		return ""
-	}
-	return c.urls[0].String()
+type Env struct {
+	Credentials string `json:"GOOGLE_APPLICATION_CREDENTIALS"`
+	ClientID    string `json:"IAP_CLIENT_ID"`
 }
 
-type shell struct {
-	stdin   io.Reader
-	stdout  io.Writer
-	stderr  io.Writer
-	env     map[string]string
-	command string
-	args    []string
-}
+const (
+	envCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
+	envClientID    = "IAP_CLIENT_ID"
+	envCurlCommand = "IAP_CURL_BIN"
+)
 
-func newShell(command string, args []string) shell {
-	return shell{
-		stdin:   os.Stdin,
-		stdout:  os.Stdout,
-		stderr:  os.Stderr,
-		env:     map[string]string{},
-		command: command,
-		args:    args,
+// GetEnv returns Env includes url
+func GetEnv() (env Env, err error) {
+	credentials := os.Getenv(envCredentials)
+	clientID := os.Getenv(envClientID)
+	if credentials == "" {
+		credentials, _ = homedir.Expand(env.Credentials)
 	}
-}
-
-func (s shell) run() error {
-	command := s.command
-	if _, err := exec.LookPath(command); err != nil {
-		return err
+	if clientID == "" {
+		clientID = env.ClientID
 	}
-	for _, arg := range s.args {
-		command += " " + shellescape.Quote(arg)
+	if credentials == "" {
+		return env, fmt.Errorf("%s is missing", envCredentials)
 	}
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", "/c", command)
-	} else {
-		cmd = exec.Command("sh", "-c", command)
+	if clientID == "" {
+		return env, fmt.Errorf("%s is missing", envClientID)
 	}
-	cmd.Stderr = s.stderr
-	cmd.Stdout = s.stdout
-	cmd.Stdin = s.stdin
-	for k, v := range s.env {
-		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", k, v))
-	}
-	return cmd.Run()
+	return Env{
+		Credentials: credentials,
+		ClientID:    clientID,
+	}, nil
 }

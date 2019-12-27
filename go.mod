@@ -1,4 +1,4 @@
-module github.com/b4b4r07/iap_curl
+module github.com/st-tech/iap_token
 
 go 1.12
 
