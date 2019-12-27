@@ -15,4 +15,4 @@ archive:
 release:
   github:
     owner: b4b4r07
-    name: iap_curl
+    name: iap_token
