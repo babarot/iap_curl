@@ -1,5 +1,5 @@
 builds:
-  - binary: iap_curl
+  - binary: iap_token
     goos:
       - darwin
       - linux
@@ -14,5 +14,5 @@ archive:
     - README.md
 release:
   github:
-    owner: b4b4r07
+    owner: TrsNium
     name: iap_token

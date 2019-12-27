@@ -1,4 +1,4 @@
-module github.com/st-tech/iap_token
+module github.com/TrsNium/iap_token
 
 go 1.12
 
