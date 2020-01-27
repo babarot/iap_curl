@@ -1,18 +1,32 @@
+project_name: gist
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod tidy
 builds:
-  - binary: iap_curl
+  - main: .
+    binary: iap_curl
     goos:
       - darwin
       - linux
     goarch:
       - amd64
-    ldflags:
-     - -X main.Version={{.Version}}
-archive:
-  format: zip
-  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-  files:
-    - README.md
+    ldflags: 
+      - -s -w
+      - -X main.Version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    replacements:
+      darwin: darwin
+      linux: linux
+      windows: windows
+      386: i386
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
 release:
-  github:
-    owner: b4b4r07
-    name: iap_curl
+  prerelease: auto
