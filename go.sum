@@ -1,5 +1,8 @@
 cloud.google.com/go v0.16.0 h1:alV/SO2XpH+lrvqjDl94dYez7FfeT8ptayazgWwHPIU=
 cloud.google.com/go v0.16.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+github.com/alessio/shellescape v0.0.0-20190409004728-b115ca0f9053 h1:H/GMMKYPkEIC3DF/JWQz8Pdd+Feifov2EIgGfNpeogI=
+github.com/alessio/shellescape v0.0.0-20190409004728-b115ca0f9053/go.mod h1:xW8sBma2LE3QxFSzCnH9qe6gAE2yO9GvQaWwX89HxbE=
+github.com/golang/protobuf v0.0.0-20171113180720-1e59b77b52bf h1:pFr/u+m8QUBMW/itAczltF3guNRAL7XDs5tD3f6nSD0=
 github.com/golang/protobuf v0.0.0-20171113180720-1e59b77b52bf/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/hashicorp/logutils v1.0.0 h1:dLEQVugN8vlakKOUE3ihGLTZJRB4j+M2cdTm/ORI65Y=
 github.com/hashicorp/logutils v1.0.0/go.mod h1:QIAnNjmIWmVIIkWDTG1z5v++HQmx9WQRO+LraFDTW64=
@@ -9,6 +12,9 @@ golang.org/x/net v0.0.0-20171123081856-c7086645de24 h1:z0cmn+BVQSCN8exp26jnHqHXH
 golang.org/x/net v0.0.0-20171123081856-c7086645de24/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/oauth2 v0.0.0-20171117235251-f95fa95eaa93 h1:cW/NTE+jJZF+ol7uwmnbwVHteKb6QefHoMfJQguI3PQ=
 golang.org/x/oauth2 v0.0.0-20171117235251-f95fa95eaa93/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
+golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e h1:vcxGaoTs7kV8m5Np9uUNQin4BrLOthgV7252N8V+FwY=
+golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+google.golang.org/appengine v1.0.0 h1:dN4LljjBKVChsv0XCSI+zbyzdqrkEwX5LQFUMRSGqOc=
 google.golang.org/appengine v1.0.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61 h1:8ajkpB4hXVftY5ko905id+dOnmorcS2CHNxxHLLDcFM=
 gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61/go.mod h1:IfMagxm39Ys4ybJrDb7W3Ob8RwxftP0Yy+or/NVz1O8=
