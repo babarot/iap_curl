@@ -1,7 +1,7 @@
 iap_curl
 ========
 
-iap_curl is a curl wrapper for making HTTP request to IAP-protected app in CLI more easier than curl
+`iap_curl` is a curl wrapper for making HTTP request to IAP-protected app in CLI more easier than `curl` command.
 
 ## Usage
 
@@ -11,9 +11,9 @@ $ export IAP_CLIENT_ID="342624545358-asdfd8fas9df8sd7ga0sdguadfpvqp69.apps.googl
 $ iap_curl http://iap-protected.webapp.com
 ```
 
-The options of `iap_curl` are fully compatible with curl.
+The options of `iap_curl` are fully compatible with `curl` command.
 
-If you want to use [httpstat](https://github.com/b4b4r07/httpstat), please specify the `IAP_CURL_BIN` environment variable:
+If you want to use [httpstat](https://github.com/b4b4r07/httpstat) instead of `curl`, please specify `IAP_CURL_BIN` environment variable:
 
 ```console
 $ export IAP_CURL_BIN="httpstat.sh"
@@ -78,6 +78,8 @@ $ iap_curl $(iap_curl --list-urls | peco) # peco is similar to fzf
 ```
 
 ## Installation
+
+Get binary from [GitHub Releases](https://github.com/b4b4r07/iap_curl/releases) and put it to your PATH or:
 
 ```
 $ go get github.com/b4b4r07/iap_curl
