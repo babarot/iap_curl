@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	envCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
-	envClientID    = "IAP_CLIENT_ID"
-	envCurlCommand = "IAP_CURL_BIN"
+	envCredentials               = "GOOGLE_APPLICATION_CREDENTIALS"
+	envImpersonateServiceAccount = "CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT"
+	envClientID                  = "IAP_CLIENT_ID"
+	envCurlCommand               = "IAP_CURL_BIN"
 )
 
 // Config represents
@@ -37,9 +38,10 @@ type Service struct {
 
 // Env represents the environment variables needed to request to IAP-protected app
 type Env struct {
-	Credentials string `json:"GOOGLE_APPLICATION_CREDENTIALS"`
-	ClientID    string `json:"IAP_CLIENT_ID"`
-	Binary      string `json:"IAP_CURL_BIN"`
+	Credentials               string `json:"GOOGLE_APPLICATION_CREDENTIALS"`
+	ImpersonateServiceAccount string `json:"CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT"`
+	ClientID                  string `json:"IAP_CLIENT_ID"`
+	Binary                    string `json:"IAP_CURL_BIN"`
 }
 
 func configDir() (string, error) {
@@ -125,10 +127,14 @@ func (cfg *Config) getEnvFromFile(url string) (env Env, err error) {
 func (cfg *Config) GetEnv(url string) (env Env, err error) {
 	env, _ = cfg.getEnvFromFile(url)
 	credentials := os.Getenv(envCredentials)
+	impersonateServiceAccount := os.Getenv(envImpersonateServiceAccount)
 	clientID := os.Getenv(envClientID)
 	binary := os.Getenv(envCurlCommand)
 	if credentials == "" {
 		credentials, _ = homedir.Expand(env.Credentials)
+	}
+	if impersonateServiceAccount == "" {
+		impersonateServiceAccount, _ = homedir.Expand(env.ImpersonateServiceAccount)
 	}
 	if clientID == "" {
 		clientID = env.ClientID
@@ -136,8 +142,8 @@ func (cfg *Config) GetEnv(url string) (env Env, err error) {
 	if binary == "" {
 		binary = env.Binary
 	}
-	if credentials == "" {
-		return env, fmt.Errorf("%s is missing", envCredentials)
+	if credentials == "" && impersonateServiceAccount == "" {
+		return env, fmt.Errorf("%s and %s is missing. Either is required", envCredentials, envImpersonateServiceAccount)
 	}
 	if clientID == "" {
 		return env, fmt.Errorf("%s is missing", envClientID)
@@ -146,9 +152,10 @@ func (cfg *Config) GetEnv(url string) (env Env, err error) {
 		binary = "curl"
 	}
 	return Env{
-		Credentials: credentials,
-		ClientID:    clientID,
-		Binary:      binary,
+		Credentials:               credentials,
+		ImpersonateServiceAccount: impersonateServiceAccount,
+		ClientID:                  clientID,
+		Binary:                    binary,
 	}, nil
 }
 

@@ -5,8 +5,18 @@ iap_curl
 
 ## Usage
 
+### Option1: Use Application Default Credential
+
 ```console
 $ export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+$ export IAP_CLIENT_ID="342624545358-asdfd8fas9df8sd7ga0sdguadfpvqp69.apps.googleusercontent.com"
+$ iap_curl http://iap-protected.webapp.com
+```
+
+### Option2: Use [Impersonate Service Account](https://cloud.google.com/iam/docs/impersonating-service-accounts)
+
+```console
+$ export CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT="client@project-id.iam.gserviceaccount.com"
 $ export IAP_CLIENT_ID="342624545358-asdfd8fas9df8sd7ga0sdguadfpvqp69.apps.googleusercontent.com"
 $ iap_curl http://iap-protected.webapp.com
 ```
@@ -50,6 +60,8 @@ Body discarded
 
 You can save the URL of frequently used service together with its Env (`IAP_CLIENT_ID` ...) in a JSON file (see also [#1](https://github.com/b4b4r07/iap_curl/issues/1)). This file is located in `~/.config/iap_curl/config.json`.
 
+### Option1: Use Application Default Credential
+
 ```json
 {
   "services": [
@@ -57,6 +69,23 @@ You can save the URL of frequently used service together with its Env (`IAP_CLIE
       "url": "https://my.service.com/health",
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "/Users/b4b4r07/Downloads/my-service-dev-b5e624fd28ee.json",
+        "IAP_CLIENT_ID": "839558305167-s3akt4doo38lckhaac1ucfdp0e4921tc.apps.googleusercontent.com",
+        "IAP_CURL_BIN": "curl"
+      }
+    }
+  ]
+}
+```
+
+### Option2: Use [Impersonate Service Account](https://cloud.google.com/iam/docs/impersonating-service-accounts)
+
+```json
+{
+  "services": [
+    {
+      "url": "https://my.service.com/health",
+      "env": {
+        "CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT": "client@project-id.iam.gserviceaccount.com",
         "IAP_CLIENT_ID": "839558305167-s3akt4doo38lckhaac1ucfdp0e4921tc.apps.googleusercontent.com",
         "IAP_CURL_BIN": "curl"
       }
