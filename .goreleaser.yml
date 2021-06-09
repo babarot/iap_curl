@@ -1,4 +1,4 @@
-project_name: gist
+project_name: iap_curl
 env:
   - GO111MODULE=on
 before:
