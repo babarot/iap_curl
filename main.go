@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/apstndb/tokensource"
 	"gopkg.in/alessio/shellescape.v1"
 )
 
@@ -146,11 +148,12 @@ func (c CLI) run() int {
 		return c.exit(err)
 	}
 
-	iap, err := newIAP(env.Credentials, env.ClientID)
+	ts, err := tokensource.SmartIDTokenSource(context.Background(), env.ClientID)
 	if err != nil {
 		return c.exit(err)
 	}
-	token, err := iap.GetToken()
+
+	token, err := ts.Token()
 	if err != nil {
 		return c.exit(err)
 	}
@@ -162,7 +165,7 @@ func (c CLI) run() int {
 		})
 	}
 
-	authHeader := fmt.Sprintf("Authorization: Bearer %s", token)
+	authHeader := fmt.Sprintf("Authorization: Bearer %s", token.AccessToken)
 	args := append(
 		[]string{"-H", authHeader}, // For IAP
 		c.cfg.GetServiceArgs(url)...,
