@@ -6,15 +6,20 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1.2.0
+        with:
+          persist-credentials: false
       - name: Setup Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@0caeaed6fd66a828038c2da3c0f662a42862658f # v1.1.3
         with:
           go-version: 1.16
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
+        uses: goreleaser/goreleaser-action@6e37040623d14330555c7be1603a9182cf92d32a # v1.5.1
         with:
           version: latest
           args: release --rm-dist
